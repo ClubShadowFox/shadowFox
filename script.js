@@ -16,11 +16,20 @@ class Paper {
   rotating = false;
 
   init(paper) {
-    const handleMouseMove = (e) => {
-      if (!this.rotating) {
-        this.mouseX = e.clientX || e.touches[0].clientX;
-        this.mouseY = e.clientY || e.touches[0].clientY;
+    const handleMove = (e) => {
+      // Prevent default behavior to avoid scrolling
+      e.preventDefault();
 
+      // Get current mouse/touch position
+      if (e.touches && e.touches.length > 0) {
+        this.mouseX = e.touches[0].clientX;
+        this.mouseY = e.touches[0].clientY;
+      } else {
+        this.mouseX = e.clientX;
+        this.mouseY = e.clientY;
+      }
+
+      if (!this.rotating) {
         this.velX = this.mouseX - this.prevMouseX;
         this.velY = this.mouseY - this.prevMouseY;
       }
@@ -28,8 +37,8 @@ class Paper {
       const dirX = this.mouseX - this.mouseTouchX;
       const dirY = this.mouseY - this.mouseTouchY;
       const dirLength = Math.sqrt(dirX * dirX + dirY * dirY);
-      const dirNormalizedX = dirX / dirLength;
-      const dirNormalizedY = dirY / dirLength;
+      const dirNormalizedX = dirLength > 0 ? dirX / dirLength : 0;
+      const dirNormalizedY = dirLength > 0 ? dirY / dirLength : 0;
 
       const angle = Math.atan2(dirNormalizedY, dirNormalizedX);
       let degrees = 180 * angle / Math.PI;
@@ -50,35 +59,44 @@ class Paper {
       }
     };
 
-    const handleMouseDown = (e) => {
+    const handleStart = (e) => {
+      // Prevent default behavior to avoid scrolling
+      e.preventDefault();
       if (this.holdingPaper) return;
+
       this.holdingPaper = true;
 
       paper.style.zIndex = highestZ;
       highestZ += 1;
 
-      if (e.button === 0 || e.touches) {
-        this.mouseTouchX = e.clientX || e.touches[0].clientX;
-        this.mouseTouchY = e.clientY || e.touches[0].clientY;
-        this.prevMouseX = this.mouseTouchX;
-        this.prevMouseY = this.mouseTouchY;
+      // Set initial touch/mouse position
+      if (e.touches && e.touches.length > 0) {
+        this.mouseTouchX = e.touches[0].clientX;
+        this.mouseTouchY = e.touches[0].clientY;
+      } else {
+        this.mouseTouchX = e.clientX;
+        this.mouseTouchY = e.clientY;
       }
+      this.prevMouseX = this.mouseTouchX;
+      this.prevMouseY = this.mouseTouchY;
+
       if (e.button === 2) {
         this.rotating = true;
       }
     };
 
-    const handleMouseUp = () => {
+    const handleEnd = () => {
       this.holdingPaper = false;
       this.rotating = false;
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('touchmove', handleMouseMove);
-    paper.addEventListener('mousedown', handleMouseDown);
-    paper.addEventListener('touchstart', handleMouseDown);
-    window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('touchend', handleMouseUp);
+    // Add event listeners for mouse and touch events
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('touchmove', handleMove);
+    paper.addEventListener('mousedown', handleStart);
+    paper.addEventListener('touchstart', handleStart);
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchend', handleEnd);
   }
 }
 
